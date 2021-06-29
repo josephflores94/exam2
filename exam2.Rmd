@@ -153,4 +153,6 @@ titanic$first_class = NA
 
 #Ran out of time, spent too much on the first set of Qs
 
+Github repository is available here: https://github.com/josephflores94/exam2
+
 ##Thanks Professors Findley and Denly!
