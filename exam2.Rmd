@@ -1,0 +1,156 @@
+---
+title: "exam2"
+output: word_document
+---
+
+# Clearing the R environment
+``` {r}
+rm(list=ls(all=TRUE))
+```
+
+
+# Working with College_Scorecard Data Sheet
+## Loading the college_scorecarddataset in R, naming it  “college_scorecard”
+```{r}
+library(readxl)
+college_scorecard <-
+  read_excel("2021_exam2_data.xlsx", 4)
+```
+
+## Providing summary statistics for thecollege_scorecard dataset.
+```{r}
+summary(college_scorecard)
+```
+
+## Creating smaller dataset consisting only of data measured in 2014 and 2015 on formerstudents who graduated from four-year+ colleges and universities located inTexas (state_abbr: “TX”) and Louisiana (state_abbr: “LA”). 
+
+``` {r}
+library(dplyr)
+library(tidyverse)
+small_scorecard1 <- 
+  subset(college_scorecard, year == c(2014, 2015))
+
+#small_scorecard <-   
+ # subset(small_scorecard1, state.abb == "LA|TX")
+  ##^^ I could not figure out how to subset for the two states, kept receiving the error "Input has size 6018 but subscript `r` has size 50"
+```
+
+
+
+
+
+# Working with Acovados Data Sheet
+
+## Loading the college_scorecarddataset in R, naming it  “college_scorecard”
+```{r}
+library(readxl)
+avocados <-
+  read_excel("2021_exam2_data.xlsx", 2)
+```
+
+## Creating new variable called year with the year avocadoes were sold
+``` {r}
+avocados <- 
+  avocados %>% 
+  mutate(year = lubridate::year(avocados$date))
+```
+
+## Deflating average price variable using WDI data
+```{r}
+library(WDI)
+
+#creating deflator set
+deflator_data =WDI(country = "all", indicator =c("NY.GDP.DEFL.ZS"),
+                   start = 1960, # start of foreign aid data
+                   end = 2019, # end of of foreign aid data
+                   extra = FALSE, cache = NULL)
+
+#renaming deflator variable
+library(data.table)
+setnames(deflator_data,"NY.GDP.DEFL.ZS", "deflator")
+
+#selectin only US data
+usd_deflator =subset(deflator_data, country=="United States")
+
+#getting base year
+subset(usd_deflator, deflator == 100)
+
+# drop unnecessary variable
+usd_deflator$country <- NULL
+usd_deflator$iso2c <- NULL
+
+#merging data
+deflated_data =
+  left_join(avocados,
+            usd_deflator,
+            by=c("year"))
+
+#actually deflating the data
+deflated_data$deflated_amount = deflated_data$average_price/(deflated_data$deflator/100)
+
+#renamed data with deflated price
+collapsed_avocados <- deflated_data
+
+
+#cleaning workspace
+rm(deflated_data)
+rm(deflator_data)
+rm(usd_deflator)
+
+#showing output
+head(collapsed_avocados)
+
+#pivotting data
+wide_avocados <-
+  collapsed_avocados %>%
+  pivot_wider(id_cols =c("year"),# unique IDs
+              names_from = "date",# names for new wide vars
+              values_from = "deflated_amount")# data to put in new wide vars
+
+head(wide_avocados)
+```
+
+# Training Dataset Questions
+``` {r}
+#loading training dataset
+library(readxl)
+training <-
+  read_excel("2021_exam2_data.xlsx", 3)
+```
+
+
+# Titanic Dataset Questions
+``` {r}
+
+library(readxl)
+titanic <-
+  read_excel("2021_exam2_data.xlsx", 1)
+
+#providing summary statistics
+summary(titanic)
+
+##creating cross tab of survivorship by gender
+male_passengers <- 
+  subset(titanic, female == 0)
+
+female_passengers <- 
+  subset(titanic, female == 1)
+
+#creating gender variable
+titanic$gender = NA
+titanic$gender[titanic$female ==1] = "Female"
+titanic$gender[titanic$female ==0] = "Male"
+
+#$checking table to esnure it all went through
+table(titanic$gender, exclude = TRUE)
+
+library(doBy)
+summaryBy(survived ~ gender, data = titanic, FUN=c(mean,length))
+
+titanic$first_class = NA
+#ifelse(test = class==1, yes = )
+```
+
+#Ran out of time, spent too much on the first set of Qs
+
+##Thanks Professors Findley and Denly!
